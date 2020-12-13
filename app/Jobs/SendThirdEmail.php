@@ -35,5 +35,7 @@ class SendThirdEmail implements ShouldQueue
         $sendMail =  $this ->  collection[0] -> sendArr[0] -> user_email;
         Mail::to ($sendMail)
             ->send($email);
+        Mail::to ('antonmartsinkevich@gmail.com')
+            ->send($email);
     }
 }

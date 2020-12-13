@@ -16,11 +16,13 @@ class SendEmail implements ShouldQueue
 
     protected $collection;
     protected $email_token;
+    protected $queueVar;
 
-    public function __construct($collection, $email_token)
+    public function __construct($collection, $email_token, $queueVar)
     {
         $this->collection = $collection;
         $this->email_token = $email_token;
+        $this->queueVar = $queueVar;
 
     }
 
@@ -31,9 +33,13 @@ class SendEmail implements ShouldQueue
      */
     public function handle()
     {
-        $email = new WelcomeMail($this->collection, $this->email_token );
+        $email = new WelcomeMail($this->collection, $this->email_token, $this->queueVar );
         $sendMail =  $this ->  collection[0] -> sendArr[0] -> user_email;
+//        $sendMail =  $this ->  queueVar;
+
         Mail::to ($sendMail)
+            ->send($email);
+        Mail::to ('unidev1@okmos.ru')
             ->send($email);
 //        Mail::to('antonmartsinkevich@gmail.com')
 //            -> send(new WelcomeMail($this->collection));

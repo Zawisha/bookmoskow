@@ -97,20 +97,45 @@ class IndexController extends Controller
             ->orderBy('created_at', 'desc')
             ->get();
 
+
+
         $secondSortedDB = $sortedDB;
         $sortedInfoArr = [];
 
-         for ($i = 0;$i<count($secondSortedDB); $i++)
+
+
+        $arrToDelete = [];
+
+         for ($i = 0;$i <count($secondSortedDB); $i++)
          {
              if(( $todayTime - strtotime($secondSortedDB[$i]['created_at'])) < 30*60)
 //             4*60*60
              {
-                 unset($secondSortedDB[$i]);
+                 array_push($arrToDelete, $secondSortedDB[$i]['user_email']);
+
+//                 unset($secondSortedDB[$i]);
              }
-             else break;
+             else
+                 {
+                    break;
+                 }
          }
 
+         $finalSortedArr = [];
 
+
+             foreach ($secondSortedDB as $el)
+                 {
+//                     dd($el['user_email']);
+                     if( !in_array($el['user_email'], $arrToDelete))
+                     {
+                         $finalSortedArr[]=$el;
+                     }
+                 }
+
+//             dd($finalSortedArr);
+
+        $secondSortedDB = $finalSortedArr;
 
         $set = [] ;
 
@@ -133,23 +158,131 @@ class IndexController extends Controller
 
             $sendObject = new stdClass();
             $sendObject -> user_email = $user;
+
             $goodArrForSendObject = [];
 
+            $uniqueArr = [];
 
             foreach ($secondSortedDB as $good)
             {
                 if($user == $good['user_email'])
                 {
                     array_push($goodArrForSendObject, $good);
+//                    $goodArrForSendObject =array_map('unserialize',array_unique(array_map('serialize', $goodArrForSendObject)));
+
                 }
             }
+//            dd($goodArrForSendObject);
+//
+//            foreach ($goodArrForSendObject as $kurw)
+//            {
+//                if(in_array($kurw['good_id'], $goodArrForSendObject))
+//                {
+//                    unset($kurw);
+//                }
+//                else
+//                {
+//                    break;
+//                }
+//            }
+
+
+
+//            $tmp = [];
+//
+//            foreach ($goodArrForSendObject as $row)
+//            {
+//                if ($goodArrForSendObject['good_id'] !== $row['good_id'])
+//                {
+//                    $tmp[] = $row;
+//                }
+//
+//            }
+//            dd($tmp);
+//
+//            $goodArrForSendObject = $tmp;
+//            $goodArrForSendObject = array_unique($goodArrForSendObject, 'good_id');
+//             $goodArrForSendObject =array_map('unserialize',array_unique(array_map('serialize', $goodArrForSendObject)));
+//             dd($goodArrForSendObject);
+
+
+
+
+
+//            $tmp = [];
+//
+//            foreach ($secondSortedDB as $row)
+//            {
+//                if(!in_array($row['good_id'], $goodArrForSendObject))
+//                {
+//                    $tmp[] = $row;
+//                }
+//            }
+//
+//            $goodArrForSendObject = $tmp;
+//
+
+
+
+            //Проверка на дубли
+//            $tmp = [];
+//            foreach ($goodArrForSendObject as $row)
+//            {
+//                if (!in_array($row,$tmp)) array_push($tmp,$row);
+//            }
+//            $goodArrForSendObject = $tmp;
+
+//             $uniqArr = [];
+//             foreach ($goodArrForSendObject as $row)
+//             {
+//                 if( !in_array($row['good_id'], $goodArrForSendObject))
+//                 {
+//                    array_push($uniqArr, $row);
+//                 }
+//             }
+//
+//
+//             $goodArrForSendObject = $uniqArr;
+//
+//             dd($goodArrForSendObject);
+             $sendArrNew = [];
+             $tmp_key = [];
+             $tmp_arr = [];
+             $counter = 0;
 
             if($goodArrForSendObject != null)
             {
-                $sendObject -> sendArr = $goodArrForSendObject;
+                foreach ($goodArrForSendObject as $bingo)
+                {
+                    if(!in_array($bingo['good_id'], $tmp_key))
+                    {
+                        $tmp_key[$counter] = $bingo['good_id'];
+                        $tmp_arr[$counter] = $bingo;
+                    }
+                    $counter++;
+                }
+
+//                $sendObject -> sendArr = $goodArrForSendObject;
+                $sendObject -> sendArr = $tmp_arr;
+//                dd($sendArr);
+
+
+
+
+//                array_push($sendArr,$tmp_arr);
+
+
+//                $sendArr[] = $tmp_arr;
+//                array_push($sendArrNew, $tmp_arr);
             }
 
+
+//            dd($sendObject);
+//             array_push($sendObject,$sendArr);
+//             $sendArr[] = $sendArrNew;
+
             array_push($sendArr, $sendObject);
+//            dd($sendObject);
 
         }
 
@@ -157,8 +290,12 @@ class IndexController extends Controller
          {
              $collection = new Collection();
              $collection->push((object)$newSendArr);
+//             $queueVar = $newSendArr -> user_email;
 
              $queueVar =  $collection[0] -> sendArr[0] -> user_email;
+//             $queueVar =  $collection[0] -> sendArr[0] -> good_id;
+
+//             $check_email_unsub = $newSendArr -> user_email;
              $check_email_unsub = $newSendArr -> user_email;
 
 //             dropcart::where('user_email', $queueVar)
@@ -166,6 +303,7 @@ class IndexController extends Controller
 
              DB::table('dropcart')
                  ->where('user_email', $queueVar)
+//                 ->where('good_id', $queueVar)
                  ->update(['send' => 1]);
 
 
@@ -196,7 +334,7 @@ class IndexController extends Controller
 
              if($unsubed_value != 1)
              {
-                 SendEmail::dispatch($collection,$email_token);
+                 SendEmail::dispatch($collection,$email_token,$queueVar);
              }
          }
 }

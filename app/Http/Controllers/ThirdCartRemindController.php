@@ -23,16 +23,48 @@ class ThirdCartRemindController extends Controller
         $secondSortedDB = $sortedDB;
         $sortedInfoArr = [];
 
-        for ($i = 0;$i<count($secondSortedDB); $i++)
+//        for ($i = 0;$i<count($secondSortedDB); $i++)
+//        {
+//            if(($todayTime - strtotime($secondSortedDB[$i]['created_at'])) <  72*60*60)
+////            72*60*60
+//            {
+//                unset($secondSortedDB[$i]);
+//            }
+//            else break;
+//        }
+
+        $arrToDelete = [];
+
+        for ($i = 0;$i <count($secondSortedDB); $i++)
         {
-            if(($todayTime - strtotime($secondSortedDB[$i]['created_at'])) < 72*60*60)
-//            72*60*60
+            if(( $todayTime - strtotime($secondSortedDB[$i]['created_at'])) < 72*60*60)
+//             4*60*60
             {
-                unset($secondSortedDB[$i]);
+                array_push($arrToDelete, $secondSortedDB[$i]['user_email']);
+
+//                 unset($secondSortedDB[$i]);
             }
-            else break;
+            else
+            {
+                break;
+            }
         }
 
+        $finalSortedArr = [];
+
+
+        foreach ($secondSortedDB as $el)
+        {
+//                     dd($el['user_email']);
+            if( !in_array($el['user_email'], $arrToDelete))
+            {
+                $finalSortedArr[]=$el;
+            }
+        }
+
+//             dd($finalSortedArr);
+
+        $secondSortedDB = $finalSortedArr;
 
 
         $set = [] ;
@@ -81,17 +113,21 @@ class ThirdCartRemindController extends Controller
             $collection = new Collection();
             $collection->push((object)$newSendArr);
 
-            $queueVar =  $collection[0] -> sendArr[0] -> user_email;
+//            $queueVar =  $collection[0] -> sendArr[0] -> user_email;
+            $queueVar =  $collection[0] -> sendArr[0] -> good_id;
             $check_email_unsub = $newSendArr -> user_email;
 
+//            DB::table('dropcart')
+//                ->where('user_email', $queueVar)
+//                ->update(['send' => 3]);
+
             DB::table('dropcart')
-                ->where('user_email', $queueVar)
+//                 ->where('user_email', $queueVar)
+                ->where('good_id', $queueVar)
                 ->update(['send' => 3]);
 
 
-//            $result = DB::table('dropcart')
-//                ->where('user_email',$queueVar )
-//                ->update(['send' => 3]);
+
 
             if(!EmailsDb::where('user_email', '=', $check_email_unsub)->exists())
                 //Проверка есть ли мэйл в нашей бд мэйлов

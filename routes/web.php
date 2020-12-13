@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Route;
 |
 */
 Route::get('/', 'IndexController@index')->where('any', '.*')->name('main');
+
+Route::get('/test', 'IndexController@set_time')->name('test');
+
+Route::get('/change_images', 'PicController@change_images');
+
 //Route::get('/{any}', 'IndexController@index')->where('any', '.*')->name('main');
 
 //Route::get('send','mailController@send');
